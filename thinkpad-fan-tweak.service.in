@@ -4,7 +4,7 @@ Description=ThinkPad fan tweak
 [Service]
 Type=simple
 Restart=no
-ExecStart=/usr/local/bin/thinkpad-fan-tweak
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/@PROJECT_NAME@
 
 [Install]
 WantedBy=multi-user.target 
