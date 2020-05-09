@@ -55,6 +55,8 @@ float get_temp() {
                 filename,
                 strerror(errno));
         fflush(stderr);
+
+        fclose(file);
         return -1;
     }
 
@@ -80,6 +82,8 @@ int set_mode(const char* mode) {
                 filename,
                 strerror(errno));
         fflush(stderr);
+
+        fclose(file);
         return -1;
     }
 

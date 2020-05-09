@@ -60,6 +60,7 @@ int config_read(Config* config) {
     }
 
     free(line);
+    fclose(file);
 
 defaults:
 
