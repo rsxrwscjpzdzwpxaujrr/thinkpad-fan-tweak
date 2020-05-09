@@ -31,14 +31,14 @@ int config_read(Config* config) {
     if (!file) {
         if (errno == ENOENT) {
             fprintf(stderr,
-                    "Warning! Config file " CONFIG_DEFAULT_PATH
+                    "WARNING: Config file " CONFIG_DEFAULT_PATH
                     " does not exist, loading with default parameters.\n");
             fflush(stderr);
             goto defaults;
         }
 
         fprintf(stderr,
-                "Cannot open file %s. Reason: %s.\n",
+                "ERROR: Cannot open file %s. Reason: %s.\n",
                 CONFIG_DEFAULT_PATH,
                 strerror(errno));
         fflush(stderr);
