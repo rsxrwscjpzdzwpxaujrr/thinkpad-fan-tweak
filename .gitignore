@@ -1,0 +1,7 @@
+/*
+!.gitignore
+!/CMakeLists.txt
+!/README.md
+!/COPYING
+!/src
+!/thinkpad-fan-tweak.service.in

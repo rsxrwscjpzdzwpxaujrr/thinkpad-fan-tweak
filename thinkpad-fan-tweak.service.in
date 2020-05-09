@@ -1,0 +1,10 @@
+[Unit]
+Description=ThinkPad fan tweak
+
+[Service]
+Type=simple
+Restart=no
+ExecStart=/usr/local/bin/thinkpad-fan-tweak
+
+[Install]
+WantedBy=multi-user.target 
