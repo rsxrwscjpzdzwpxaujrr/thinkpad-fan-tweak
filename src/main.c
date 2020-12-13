@@ -31,82 +31,81 @@ FILE* open_file(const char* path, const char* mode) {
                 "ERROR: Cannot open file %s. Reason: %s.\n",
                 path,
                 strerror(errno));
-
         fflush(stderr);
+
         return NULL;
     }
 
     return file;
 }
 
-float get_temp() {
-    const char* filename = "/sys/class/hwmon/hwmon4/temp1_input";
-
-    FILE* file = open_file(filename, "r");
-
-    if (!file)
-        return -1;
-
+float get_temp(FILE* temp_file) {
     int temp_raw;
 
-    if (fscanf(file, "%d", &temp_raw) == EOF) {
+    if (fscanf(temp_file, "%d", &temp_raw) == EOF) {
         fprintf(stderr,
-                "ERROR: Cannot read file %s. Reason: %s.\n",
-                filename,
+                "ERROR: Cannot read temperature. Reason: %s.\n",
                 strerror(errno));
         fflush(stderr);
 
-        fclose(file);
         return -1;
     }
 
-    fclose(file);
+    if (fflush(temp_file)) {
+        fprintf(stderr,
+                "ERROR: Cannot flush input buffer. Reason: %s.\n",
+                strerror(errno));
+        fflush(stderr);
+
+        return -1;
+    }
 
     return temp_raw / 1000.0f;
 }
 
-int set_mode(const char* mode) {
-    const char* filename = "/proc/acpi/ibm/fan";
+int set_mode(const char* mode, FILE* mode_file) {
+    fputs("level ", mode_file);
+    fputs(mode, mode_file);
 
-    FILE* file = open_file(filename, "w");
-
-    if (!file)
-        return -1;
-
-    fputs("level ", file);
-    fputs(mode, file);
-
-    if (fflush(file)) {
+    if (fflush(mode_file)) {
         fprintf(stderr,
-                "ERROR: Cannot write to file %s. Reason: %s.\n",
-                filename,
+                "ERROR: Cannot write to file. Reason: %s.\n",
                 strerror(errno));
         fflush(stderr);
 
-        fclose(file);
         return -1;
     }
-
-    fclose(file);
 
     return 0;
 }
 
-int set_disengaged() {
-    return set_mode("disengaged");
+int set_disengaged(FILE* mode_file) {
+    return set_mode("disengaged", mode_file);
 }
 
-int set_auto() {
-    return set_mode("auto");
+int set_auto(FILE* mode_file) {
+    return set_mode("auto", mode_file);
 }
 
 int main() {
     Config config;
 
+    FILE* temp_file = NULL;
+    FILE* mode_file = NULL;
+
     if (config_read(&config) != -1) {
+        temp_file = open_file("/sys/class/hwmon/hwmon4/temp1_input", "r");
+        mode_file = open_file("/proc/acpi/ibm/fan", "w");
+
+        if (!temp_file || !mode_file)
+            return EXIT_FAILURE;
+
         while (1) {
-            int (*func)();
-            float temp = get_temp();
+            rewind(temp_file);
+            rewind(mode_file);
+
+            int (*func)(FILE*);
+            float temp = get_temp(temp_file);
 
             if (temp < 0)
                 break;
@@ -117,11 +116,17 @@ int main() {
             else
                 func = set_auto;
 
-            if (func())
+            if (func(mode_file))
                 break;
 
             sleep(config.interval);
         }
+
+        if (temp_file)
+            fclose(temp_file);
+
+        if (mode_file)
+            fclose(mode_file);
     }
 
     return EXIT_FAILURE;
